@@ -1,0 +1,4 @@
+_tmp_*
+.codex/
+node_modules/
+.env

@@ -1,0 +1,1108 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYBOX | Smart Quotation Studio</title>
+<link rel="icon" type="image/png" href="assets/images/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════════════════════════════════
+   设计方向："蓝图 + 瓦楞纸"（Blueprint + Kraft）
+   这是一个瓦楞纸箱结构报价工具，核心卖点是"参数化展开图 + 3D 折叠
+   预览"。配色和贯穿全站的虚线分隔条，直接借用产品本身已经在用的
+   视觉语言：死线图里的实线(切割)/虚线(折叠)、蓝图式的标注线，
+   再叠加真实瓦楞纸板的暖褐色调，让"外壳"和"内容"用的是同一套
+   视觉词汇，不是随便套一个通用 SaaS 模板。
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --ink-950: #0b1622;
+  --ink-800: #12283f;
+  --ink-700: #1c3a58;
+  --paper: #f5f1e6;
+  --paper-raised: #fffdf9;
+  --kraft: #b9803f;
+  --kraft-deep: #93662f;
+  --kraft-soft: #ead9bd;
+  --blueprint: #157f78;
+  --blueprint-deep: #0d5f5a;
+  --blueprint-soft: #d8ece9;
+  --ink: #1c2430;
+  --muted: #6f6a5c;
+  --muted-cool: #5c6b7a;
+  --line-hair: #ddd0ab;
+  --line-cool: #d9e1e6;
+  --shadow-soft: 0 18px 40px rgba(11, 22, 34, 0.09);
+  --shadow-deep: 0 30px 64px rgba(11, 22, 34, 0.20);
+  --shadow-card: 0 10px 24px rgba(28, 36, 48, 0.08);
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(21, 127, 120, 0.07), transparent 42%),
+    radial-gradient(circle at 88% 4%, rgba(185, 128, 63, 0.09), transparent 38%),
+    var(--paper);
+  font-family: "Plus Jakarta Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.logo-text,
+.hero-title {
+  font-family: "Space Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.mono,
+.dim-chip,
+.kpi,
+.result-row b,
+.pizza-dim-text {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+/* ── 签名元素：借用死线图"实线=切割/虚线=折叠"的图例，做成贯穿
+   全站的分隔条。teal 实线 + kraft 短虚线交替，出现在页头下方、
+   每个 section 标题上方、卡片顶部 ────────────────────────────── */
+.dieline-rule {
+  height: 3px;
+  width: 100%;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--blueprint) 0 22px,
+    transparent 22px 30px,
+    var(--kraft) 30px 40px,
+    transparent 40px 48px
+  );
+  border-radius: 999px;
+}
+
+header {
+  background: linear-gradient(120deg, var(--ink-950), var(--ink-800) 55%, #0e4f4b);
+  padding: 18px 8%;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--blueprint) 0 22px,
+    transparent 22px 30px,
+    var(--kraft) 30px 40px,
+    transparent 40px 48px
+  );
+  opacity: 0.9;
+}
+
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+header img {
+  height: 40px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+}
+
+.logo-text {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-size: 18px;
+}
+
+header .sub {
+  font-size: 12px;
+  opacity: 0.78;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.02em;
+}
+
+.page {
+  padding: 40px 8% 60px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 26px;
+  align-items: stretch;
+  margin-bottom: 40px;
+}
+
+.hero-panel {
+  background: var(--paper-raised);
+  border-radius: var(--radius-lg);
+  padding: 34px 34px 30px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(28, 36, 48, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blueprint-deep);
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: var(--kraft);
+  display: inline-block;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: clamp(28px, 3.6vw, 42px);
+  line-height: 1.12;
+  font-weight: 700;
+}
+
+.hero-title span {
+  color: var(--blueprint-deep);
+  position: relative;
+}
+
+.hero-copy {
+  margin-top: 16px;
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.75;
+  font-size: 15.5px;
+  max-width: 46ch;
+}
+
+.hero-kpis {
+  margin-top: 22px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kpi {
+  background: var(--paper);
+  border: 1px solid var(--line-hair);
+  color: var(--kraft-deep);
+  padding: 8px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.hero-art {
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 82% 12%, rgba(21, 127, 120, 0.35), transparent 45%),
+    linear-gradient(165deg, var(--ink-950), var(--ink-800) 70%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-deep);
+  display: grid;
+  place-items: center;
+  padding: 30px;
+}
+
+.hero-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+
+.hero-diagram {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.hero-diagram svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.35));
+}
+
+.hero-diagram-caption {
+  margin-top: 16px;
+  text-align: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.section-head {
+  margin-bottom: 22px;
+}
+
+.section-title {
+  margin: 0 0 8px;
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.section-sub {
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-size: 14.5px;
+}
+
+.box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.box-card {
+  background: var(--paper-raised);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(28, 36, 48, 0.06);
+  position: relative;
+}
+
+.box-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-deep);
+}
+
+/* 折角细节：呼应"箱子折叠"这个产品本身的动作，鼠标悬停时右上角
+   像纸板翻起一角。纯 CSS，静态时完全不可见，不干扰默认观感 */
+.box-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 0 0;
+  border-color: transparent transparent transparent transparent;
+  transition: border-width 0.28s ease;
+}
+
+.box-card:hover::after {
+  border-width: 0 26px 26px 0;
+  border-color: transparent var(--kraft) transparent transparent;
+}
+
+.box-card img {
+  width: 100%;
+  height: 176px;
+  object-fit: cover;
+  display: block;
+}
+
+.box-card h3 {
+  margin: 0;
+  padding: 16px 18px 4px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.box-card p {
+  margin: 0;
+  padding: 0 18px 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+#page2 {
+  display: none;
+}
+
+.back-btn {
+  background: var(--ink-950);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.back-btn:hover {
+  background: var(--ink-800);
+  transform: translateX(-2px);
+}
+
+.workbench {
+  display: grid;
+  grid-template-columns: 0.82fr 1.18fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.card {
+  background: var(--paper-raised);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(28, 36, 48, 0.06);
+}
+
+.selected-preview {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed var(--line-hair);
+}
+
+.selected-preview img {
+  width: 128px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-hair);
+}
+
+.preview-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.preview-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+label {
+  display: block;
+  margin-top: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  color: var(--muted-cool);
+}
+
+input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 13px;
+  border: 1px solid var(--line-cool);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: "IBM Plex Mono", monospace;
+  transition: 0.2s ease;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+input::placeholder {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  color: #a0a8b4;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--blueprint);
+  background: var(--paper-raised);
+  box-shadow: 0 0 0 3px rgba(21, 127, 120, 0.14);
+}
+
+.option-block {
+  margin-top: 16px;
+}
+
+.option-block > strong {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted-cool);
+}
+
+.option-btn {
+  margin: 8px 8px 0 0;
+  padding: 9px 15px;
+  border: 1px solid var(--line-cool);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-800);
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.option-btn:hover {
+  border-color: var(--blueprint);
+}
+
+.option-btn.active {
+  border-color: var(--blueprint-deep);
+  background: linear-gradient(130deg, var(--blueprint), var(--blueprint-deep));
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(13, 95, 90, 0.25);
+}
+
+#result {
+  margin-top: 20px;
+}
+
+.result-section {
+  background: var(--paper);
+  border: 1px solid var(--line-hair);
+  border-radius: var(--radius-md);
+  padding: 15px 17px;
+}
+
+.result-section + .result-section {
+  margin-top: 12px;
+}
+
+.result-section-title {
+  margin: 0 0 9px;
+  color: var(--ink-800);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.result-row {
+  padding: 3px 0;
+  color: var(--ink);
+  line-height: 1.75;
+  font-size: 14px;
+}
+
+.result-row b {
+  color: var(--blueprint-deep);
+}
+
+.result-note {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.preview-2d-wrap {
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(28, 36, 48, 0.06);
+  background:
+    radial-gradient(circle at 20% 12%, rgba(21, 127, 120, 0.08), transparent 44%),
+    linear-gradient(155deg, var(--paper-raised), var(--paper) 60%);
+  min-height: 520px;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.preview-2d-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.preview-2d-head h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.preview-2d-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.preview-stage {
+  width: 100%;
+  min-height: 430px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-cool);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  padding: 12px;
+}
+
+.preview-stage svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.preview-placeholder {
+  min-height: 400px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 20px;
+}
+
+.preview-static {
+  min-height: 400px;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.preview-static img {
+  width: min(100%, 560px);
+  max-height: 320px;
+  object-fit: contain;
+  display: block;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-hair);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.pizza-svg-stage {
+  min-height: 400px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.pizza-svg-canvas {
+  min-height: 380px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-cool);
+  background:
+    radial-gradient(circle at 50% 0, rgba(21, 127, 120, 0.06), transparent 48%),
+    #fff;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 10px;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.pizza-svg-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.pizza-svg-plot {
+  width: min(100%, 980px);
+  height: auto;
+  display: block;
+}
+
+.pizza-cut {
+  fill: rgba(255, 255, 255, 0.28);
+  stroke: #7fc463;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pizza-fold {
+  fill: none;
+  stroke: #d74c4c;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pizza-dim-line {
+  stroke: #2f6dff;
+  stroke-width: 2.8;
+  marker-start: url(#pizzaArrow);
+  marker-end: url(#pizzaArrow);
+}
+
+.pizza-dim-guide {
+  stroke: #2f6dff;
+  stroke-width: 1.8;
+  stroke-dasharray: 6 5;
+  opacity: 0.75;
+}
+
+.pizza-dim-text {
+  fill: #2f6dff;
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+}
+
+.pizza-svg-caption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.dim-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dim-chip {
+  background: var(--ink-950);
+  color: #fff;
+  padding: 6px 11px;
+  border-radius: 7px;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.preview-toolbar {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-mode-btn {
+  border: 1px solid var(--line-cool);
+  background: var(--paper-raised);
+  color: var(--ink-800);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.preview-mode-btn:hover:not(:disabled) {
+  border-color: var(--blueprint);
+  box-shadow: 0 8px 16px rgba(21, 127, 120, 0.14);
+}
+
+.preview-mode-btn.active {
+  border-color: var(--blueprint-deep);
+  background: linear-gradient(130deg, var(--blueprint), var(--blueprint-deep));
+  color: #fff;
+}
+
+.preview-mode-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.preview-stage.is-hidden {
+  display: none;
+}
+
+.preview-3d-stage {
+  width: 100%;
+  min-height: 430px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-cool);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  position: relative;
+}
+
+.preview-3d-stage.is-hidden {
+  display: none;
+}
+
+.preview-3d-canvas {
+  width: 100%;
+  height: 430px;
+  display: block;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(21, 127, 120, 0.07), transparent 48%),
+    var(--paper);
+}
+
+.preview-3d-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  background: rgba(255, 253, 249, 0.85);
+  z-index: 2;
+}
+
+.preview-3d-overlay.is-hidden {
+  display: none;
+}
+
+.preview-3d-controls {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-3d-controls.is-hidden {
+  display: none;
+}
+
+.preview-3d-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--line-cool);
+  background: var(--paper-raised);
+  color: var(--ink-800);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s ease;
+}
+
+.preview-3d-btn:hover {
+  border-color: var(--blueprint);
+}
+
+.preview-3d-btn.active {
+  border-color: var(--blueprint-deep);
+  background: linear-gradient(130deg, var(--blueprint), var(--blueprint-deep));
+  color: #fff;
+}
+
+.preview-3d-range {
+  flex: 1 1 220px;
+  appearance: none;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--line-cool);
+  outline: none;
+}
+
+.preview-3d-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blueprint-deep);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(13, 95, 90, 0.4);
+}
+
+.preview-3d-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blueprint-deep);
+  cursor: pointer;
+  border: none;
+}
+
+.preview-3d-hint {
+  width: 100%;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-stage {
+    min-height: 350px;
+  }
+
+  .hero-art {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+}
+
+@media (max-width: 540px) {
+  .page {
+    padding: 26px 5% 48px;
+  }
+
+  header {
+    padding: 15px 5%;
+  }
+
+  .selected-preview {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand-wrap">
+    <img src="assets/images/logo.png" alt="MYBOX Logo">
+    <div>
+      <div class="logo-text">MYBOX Quotation Lab</div>
+      <div class="sub">Fast structural pricing for corrugated boxes</div>
+    </div>
+  </div>
+  <div class="sub">Instant pricing engine</div>
+</header>
+
+<div class="page" id="page1">
+  <div class="hero">
+    <div class="hero-panel">
+      <div class="hero-eyebrow">Parametric packaging engine</div>
+      <h1 class="hero-title">Box Library + <span>Live Quotation</span></h1>
+      <p class="hero-copy">Select a structure, input dimensions, and get production-ready quote values in real time. The workflow is optimized for quick sales confirmation and sample estimation.</p>
+      <div class="hero-kpis">
+        <span class="kpi">MOQ 30 units</span>
+        <span class="kpi">3 Layer / 5 Layer</span>
+        <span class="kpi">Auto discount tier</span>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="hero-diagram">
+        <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 简化的"展开图十字"示意：中心=基底，四翼=折叠侧壁，
+               呼应产品里真实展开图的实线切割/虚线折叠图例 -->
+          <rect x="80" y="80" width="60" height="60" rx="3"
+                stroke="#b9803f" stroke-width="2.4"/>
+          <rect x="80" y="10" width="60" height="60" rx="3"
+                stroke="#b9803f" stroke-width="2.4"/>
+          <rect x="80" y="150" width="60" height="60" rx="3"
+                stroke="#b9803f" stroke-width="2.4"/>
+          <rect x="10" y="80" width="60" height="60" rx="3"
+                stroke="#b9803f" stroke-width="2.4"/>
+          <rect x="150" y="80" width="60" height="60" rx="3"
+                stroke="#b9803f" stroke-width="2.4"/>
+          <line x1="80" y1="80" x2="140" y2="80" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="80" y1="140" x2="140" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="80" y1="80" x2="80" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="140" y1="80" x2="140" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
+        </svg>
+        <div class="hero-diagram-caption">Live die-line // fold preview</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2 class="section-title">Select Your Box Type</h2>
+    <div class="section-sub">Pick one structure to open the smart sizing and quotation workbench.</div>
+    <div class="dieline-rule"></div>
+  </div>
+
+  <div class="box-grid">
+    <div class="box-card" onclick="selectBox('RSC Box','assets/images/rsc.png')">
+      <img src="assets/images/rsc.png" alt="RSC Box">
+      <h3>RSC Box</h3>
+      <p>Regular slotted carton for standard logistics and storage.</p>
+    </div>
+
+    <div class="box-card" onclick="selectBox('5 Panel Box','assets/images/5panel.png')">
+      <img src="assets/images/5panel.png" alt="5 Panel Box">
+      <h3>5 Panel Box</h3>
+      <p>Extended panel structure for long products and additional protection.</p>
+    </div>
+
+    <div class="box-card" onclick="selectBox('Pizza Box','assets/images/pizza.png')">
+      <img src="assets/images/pizza.png" alt="Pizza Box">
+      <h3>Pizza Box</h3>
+      <p>Flat fold style suitable for Premium or shallow product packaging format.</p>
+    </div>
+
+    <div class="box-card" onclick="selectBox('Gift Box','assets/images/gift.png')">
+      <img src="assets/images/gift.png" alt="Gift Box">
+      <h3>Gift Box</h3>
+      <p>Presentation-oriented structure for premium display and gifting.</p>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page2">
+  <button class="back-btn" onclick="goBack()">&larr; Back</button>
+
+  <div class="workbench">
+    <div class="card">
+      <div class="selected-preview">
+        <img id="selectedImage" alt="Selected box preview">
+        <div>
+          <h2 id="selectedTitle" class="preview-title"></h2>
+          <p class="preview-sub">Fill dimensions in mm and choose board spec to calculate.</p>
+        </div>
+      </div>
+
+      <div id="dimensionModeBlock" class="option-block dimension-mode-block" style="display:none;">
+        <strong>Dimension Type</strong><br>
+        <button id="dimModeED" class="option-btn active" onclick="selectDimensionMode('ED')">ED</button>
+        <button id="dimModeID" class="option-btn" onclick="selectDimensionMode('ID')">ID</button>
+      </div>
+
+      <label for="length">Length (mm)</label>
+      <input type="number" id="length" min="1" placeholder="e.g. 200" oninput="calculatePrice()">
+
+      <label for="width">Width (mm)</label>
+      <input type="number" id="width" min="1" placeholder="e.g. 150" oninput="calculatePrice()">
+
+      <label for="height">Height (mm)</label>
+      <input type="number" id="height" min="1" placeholder="e.g. 50" oninput="calculatePrice()">
+
+      <label for="qty">Quantity (Minimum 30)</label>
+      <input type="number" id="qty" min="30" step="1" placeholder="Minimum 30" oninput="calculatePrice()">
+
+      <div class="option-block">
+        <strong>Select Layer</strong><br>
+        <button id="btn3" class="option-btn" onclick="selectLayer(this,3)">3 Layer</button>
+        <button id="btn5" class="option-btn" onclick="selectLayer(this,5)">5 Layer</button>
+      </div>
+
+      <div id="materialOptions" class="option-block"></div>
+
+      <div id="result"></div>
+    </div>
+
+    <div class="card">
+            <div class="preview-2d-wrap">
+        <div class="preview-2d-head">
+          <h3 id="previewPanelTitle">2D SVG Preview</h3>
+          <p id="previewPanelSubtitle">Parametric die line with live L/W/H updates</p>
+        </div>
+        <div class="preview-stage" id="previewStage"></div>
+        
+        <div class="preview-3d-stage is-hidden" id="preview3DStage">
+          <canvas class="preview-3d-canvas" id="preview3DCanvas"></canvas>
+          <div class="preview-3d-overlay" id="preview3DOverlay">
+            3D preview is preparing...
+          </div>
+        </div>
+        
+        <div class="preview-3d-controls is-hidden" id="preview3DControls">
+          <button type="button" class="preview-3d-btn" id="preview3DPlayBtn" title="Play / Pause">▶</button>
+          <input type="range" id="preview3DRange" class="preview-3d-range" min="0" max="1000" step="1" value="0">
+          <button type="button" class="preview-3d-btn" id="preview3DResetBtn" title="Reset view">⌂</button>
+          <button type="button" class="preview-3d-btn" id="preview3DPanBtn" title="Pan tool (drag to move view)">✋</button>
+          <div class="preview-3d-hint" id="preview3DHint">
+            Drag to rotate. Zoom anytime, even during playback.
+          </div>
+        </div>
+        
+        <div class="dim-row">
+          <div class="dim-chip" id="dimL">L: -- mm</div>
+          <div class="dim-chip" id="dimW">W: -- mm</div>
+          <div class="dim-chip" id="dimH">H: -- mm</div>
+          <div class="dim-chip" id="dimType">Type: --</div>
+        </div>
+        
+        <div class="preview-toolbar">
+          <button type="button" class="preview-mode-btn active" id="previewMode2D">2D</button>
+          <button type="button" class="preview-mode-btn" id="previewMode3D">3D</button>
+        </div>
+        
+        <p class="note" id="previewNote">Pizza Box + RSC Box 2D preview uses your provided architecture and redraws lines in real time from your inputs.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script src="scripts/models/pizza-template-b-model.js"></script>
+<script src="scripts/models/gift-box-template.js"></script>
+<script src="scripts/models/five-panel-template.js"></script>
+
+<script src="scripts/3d/3d-scene.js"></script>
+
+<script src="scripts/3d/rsc-3d-model.js"></script>
+<script src="scripts/3d/rsc-3d-player.js"></script>
+<script src="scripts/3d/rsc-3d-preview.js"></script>
+
+<script src="scripts/3d/five-panel-3d-model.js"></script>
+<script src="scripts/3d/five-panel-3d-player.js"></script>
+<script src="scripts/3d/five-panel-3d-preview.js"></script>
+
+<script src="scripts/3d/pizza-3d-model.js"></script>
+<script src="scripts/3d/pizza-3d-player.js"></script>
+<script src="scripts/3d/pizza-3d-preview.js"></script>
+
+<script src="scripts/3d/gift-3d-model.js"></script>
+<script src="scripts/3d/gift-3d-player.js"></script>
+<script src="scripts/3d/gift-3d-preview.js"></script>
+
+<script src="scripts/app.js"></script>
+
+</body>
+</html>
