@@ -1011,6 +1011,7 @@ function calculatePrice() {
     '<div class="result-note">Delivery fee is an estimate; actual fee is confirmed upon order.</div>' +
     (discountText ? '<div class="result-note">' + discountText + '</div>' : '') +
     '<div class="result-note">Production Time: <b>5~7 working days</b></div>' +
+    '<div class="result-note">Indicative prices only, not an official quotation.</div>' +
     '</div>';
 
   document.getElementById("result").innerHTML = priceSummaryHtml + logisticsHtml;

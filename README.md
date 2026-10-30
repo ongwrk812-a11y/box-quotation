@@ -4,24 +4,8 @@ A corrugated-box quotation tool that turns a few dimensions into a **parametric 
 
 > Live demo: `https://<your-username>.github.io/<repo-name>/`
 
-## Screenshots
-
-**Home**
-
-![Home page](show_pic/show_pic_1.png)
-![Box library](show_pic/show_pic_2.png)
-
-**2D die line**
-
-![2D die line](show_pic/show_pic_3.png)
-
-**3D folding preview**
-
-![3D folding preview](show_pic/show_pic_4.png)
-
-**Exported PDF drawing**
-
-![Exported PDF](show_pic/show_pic_5.png)
+<!-- 建议在这里放 2~3 张截图（首页、2D 展开图、3D 折叠、导出的 PDF），README 的观感会好很多：
+![Home](docs/home.png) -->
 
 ## Features
 
@@ -82,8 +66,8 @@ scripts/
 
 ## Notes
 
-- The quotation figures are for demonstration only and do not represent real pricing.
-- Die-line templates are reconstructed for learning and demonstration purposes.
+- Prices shown may be outdated and are for reference only; they are not an official quotation.
+- Die-line layouts are based on third-party reference templates and are used here for learning and demonstration purposes.
 
 ## About
 
