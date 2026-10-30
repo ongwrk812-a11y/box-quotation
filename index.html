@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -51,11 +51,28 @@
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 12% 8%, rgba(21, 127, 120, 0.07), transparent 42%),
-    radial-gradient(circle at 88% 4%, rgba(185, 128, 63, 0.09), transparent 38%),
-    var(--paper);
+  background: var(--paper);
   font-family: "Plus Jakarta Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 固定背景层：position: fixed 的独立图层，放在 #page1 / #page2 外面，
+   所以首页和每个箱型的第二页共用同一张背景，切换页面时背景纹丝不动；
+   滚动、浏览器缩放都不会让它移位（cover 永远铺满当前视口）。
+   上面叠一层半透明纸色，保证文字和卡片的可读性。 */
+.bg-fixed {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper) url("assets/images/paper_box_1.jpg") center / cover no-repeat;
+  pointer-events: none;
+}
+
+.bg-fixed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(245, 241, 230, 0.55), rgba(245, 241, 230, 0.40) 55%, rgba(245, 241, 230, 0.55));
 }
 
 h1,
@@ -91,23 +108,45 @@ h3,
   border-radius: 999px;
 }
 
-header {
+/* Header 固定尺寸：浏览器缩放会让所有 CSS px 一起放大/缩小，纯 CSS
+   做不到"不跟着缩放"。所以页头顶部的脚本会检测当前缩放比例 z，把
+   --hdr-scale 设成 1/z，下面用 transform: scale 反向抵消，
+   让页头在屏幕上的实际大小保持不变（检测不到时 --hdr-scale = 1，
+   即退回普通页头，不会出错）。 */
+:root {
+  --hdr-scale: 1;
+  --hdr-h: 76px;
+}
+
+.site-header {
+  position: relative;
+  height: calc(var(--hdr-h) * var(--hdr-scale));
   background: linear-gradient(120deg, var(--ink-950), var(--ink-800) 55%, #0e4f4b);
-  padding: 18px 8%;
   color: #fff;
+  overflow: hidden;
+}
+
+.site-header-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% / var(--hdr-scale));
+  height: var(--hdr-h);
+  padding: 0 8%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative;
+  transform: scale(var(--hdr-scale));
+  transform-origin: 0 0;
 }
 
-header::after {
+.site-header::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 3px;
+  height: calc(3px * var(--hdr-scale));
   background-image: repeating-linear-gradient(
     90deg,
     var(--blueprint) 0 22px,
@@ -124,7 +163,7 @@ header::after {
   gap: 13px;
 }
 
-header img {
+.site-header img {
   height: 40px;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
 }
@@ -135,7 +174,7 @@ header img {
   font-size: 18px;
 }
 
-header .sub {
+.site-header .sub {
   font-size: 12px;
   opacity: 0.78;
   font-family: "IBM Plex Mono", monospace;
@@ -147,22 +186,50 @@ header .sub {
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 26px;
-  align-items: stretch;
-  margin-bottom: 40px;
+  margin-bottom: 14px;
 }
 
+/* 白框一整块：左边文案、右边照片，照片和白底融为一体 */
 .hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr);
   background: var(--paper-raised);
   border-radius: var(--radius-lg);
-  padding: 34px 34px 30px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-deep);
   border: 1px solid rgba(28, 36, 48, 0.06);
+  overflow: hidden;
+  min-height: 340px;
+}
+
+.hero-text {
+  padding: 44px 24px 40px 46px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.hero-photo {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 照片是白底，multiply 让白色"消失"，只留下纸箱本体；
+   左侧加渐隐遮罩，和文字区的白底自然衔接；
+   略微放大并贴顶，把照片底部的小水印裁到框外 */
+.hero-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  transform: scale(1.12);
+  transform-origin: 50% 30%;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 22%);
+  animation: heroPhotoIn 1.2s ease 0.55s both;
 }
 
 .hero-eyebrow {
@@ -204,7 +271,7 @@ header .sub {
   color: var(--muted);
   line-height: 1.75;
   font-size: 15.5px;
-  max-width: 46ch;
+  max-width: 52ch;
 }
 
 .hero-kpis {
@@ -225,55 +292,94 @@ header .sub {
   letter-spacing: 0.01em;
 }
 
-.hero-art {
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(circle at 82% 12%, rgba(21, 127, 120, 0.35), transparent 45%),
-    linear-gradient(165deg, var(--ink-950), var(--ink-800) 70%);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-deep);
-  display: grid;
-  place-items: center;
-  padding: 30px;
+/* 入场动画：类似 PPT 的"淡入"，从左到右依次展开。
+   每一块文案各自做一次"从左往右擦开 + 淡入"，错开一点时间，
+   整体读起来就是从左边开始、到右边结束。 */
+.hero-anim {
+  animation: heroSweep 1.1s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation-delay: var(--d, 0s);
 }
 
-.hero-art::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 26px 26px;
+@keyframes heroSweep {
+  from {
+    opacity: 0;
+    clip-path: inset(-12px 100% -12px -12px);
+    transform: translateX(-22px);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(-12px -12px -12px -12px);
+    transform: none;
+  }
+}
+
+@keyframes heroPhotoIn {
+  from { opacity: 0; transform: scale(1.04) translateX(24px); }
+  to   { opacity: 1; transform: scale(1.12); }
+}
+
+/* 往下滚动提示：首页 Hero 和箱型列表之间 */
+.scroll-hint-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 18px 0 8px;
+}
+
+.scroll-hint {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 18px 6px;
+  border: 1px solid rgba(28, 36, 48, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--ink-800);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.scroll-hint svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--blueprint-deep);
+  animation: hintBounce 1.6s ease-in-out infinite;
+}
+
+.scroll-hint.is-away {
+  opacity: 0;
+  transform: translateY(8px);
   pointer-events: none;
 }
 
-.hero-diagram {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-}
-
-.hero-diagram svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.35));
-}
-
-.hero-diagram-caption {
-  margin-top: 16px;
-  text-align: center;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+@keyframes hintBounce {
+  0%, 100% { transform: translateY(-2px); }
+  50%      { transform: translateY(4px); }
 }
 
 .section-head {
-  margin-bottom: 22px;
+  display: block;
+  width: 100%;
+  margin: 18px 0 22px;
+  padding: 16px 22px 14px;
+  text-align: left;
+  background: rgba(255, 253, 249, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(28, 36, 48, 0.06);
+  box-shadow: var(--shadow-card);
+}
+
+.section-head .dieline-rule {
+  width: 100%;
 }
 
 .section-title {
@@ -288,31 +394,34 @@ header .sub {
   font-size: 14.5px;
 }
 
-.box-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
+.box-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.box-card {
+.box-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 25vw, 380px);
+  /* 四行统一行高：取"描述两行字"时的高度，一行字的也撑到同样高度 */
+  min-height: 232px;
   background: var(--paper-raised);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
   box-shadow: var(--shadow-card);
   border: 1px solid rgba(28, 36, 48, 0.06);
   position: relative;
+  transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
 
-.box-card:hover {
+.box-row:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-deep);
 }
 
-/* 折角细节：呼应"箱子折叠"这个产品本身的动作，鼠标悬停时右上角
-   像纸板翻起一角。纯 CSS，静态时完全不可见，不干扰默认观感 */
-.box-card::after {
+/* 折角细节：鼠标悬停时右上角像纸板翻起一角 */
+.box-row::after {
   content: "";
   position: absolute;
   top: 0;
@@ -320,36 +429,121 @@ header .sub {
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 0 0 0 0;
-  border-color: transparent transparent transparent transparent;
+  border-width: 0;
+  border-color: transparent;
   transition: border-width 0.28s ease;
+  z-index: 2;
 }
 
-.box-card:hover::after {
-  border-width: 0 26px 26px 0;
+.box-row:hover::after {
+  border-width: 0 30px 30px 0;
   border-color: transparent var(--kraft) transparent transparent;
 }
 
-.box-card img {
-  width: 100%;
-  height: 176px;
-  object-fit: cover;
-  display: block;
+.box-row-text {
+  padding: 26px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-.box-card h3 {
+.box-index {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--kraft-deep);
+  margin-bottom: 10px;
+}
+
+.box-row h3 {
   margin: 0;
-  padding: 16px 18px 4px;
-  font-size: 18px;
+  font-size: clamp(24px, 2.6vw, 32px);
   font-weight: 700;
 }
 
-.box-card p {
-  margin: 0;
-  padding: 0 18px 18px;
+.box-row p {
+  margin: 10px 0 0;
+  max-width: 44ch;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.box-cta {
+  margin-top: 22px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blueprint-deep);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--line-hair);
+}
+
+.box-cta i {
+  font-style: normal;
+  transition: transform 0.25s ease;
+}
+
+.box-row:hover .box-cta i {
+  transform: translateX(6px);
+}
+
+.box-row-pic {
+  position: relative;
+  overflow: hidden;
+  background: var(--kraft-soft);
+  margin: 18px 22px 18px 0;
+  border-radius: var(--radius-md);
+  min-height: 150px;
+}
+
+.box-row-pic img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.box-row:hover .box-row-pic img {
+  transform: scale(1.05);
+}
+
+/* 滚动入场：每一行是独立的一个整体（框 + 文案 + 图片），
+   只有"这一行自己"滚进视口时才会触发（脚本里每行单独监听），
+   不会因为第一行出现就让四行一起飘进来。
+   用 animation 的 backwards 填充：动画前保持隐藏、动画后恢复正常样式，
+   所以不会影响后面的悬停动效。只有 JS 可用时才会先隐藏（.js 类）。 */
+.js .box-row {
+  opacity: 0;
+}
+
+.js .box-row.is-visible {
+  opacity: 1;
+  animation: rowFloatIn 0.95s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+.js .box-row.is-visible .box-row-pic img {
+  animation: picFloatIn 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.18s backwards;
+}
+
+@keyframes rowFloatIn {
+  from { opacity: 0; transform: translateY(70px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes picFloatIn {
+  from { opacity: 0; transform: translateX(40px) scale(1.06); }
+  to   { opacity: 1; transform: none; }
 }
 
 #page2 {
@@ -382,7 +576,9 @@ header .sub {
 }
 
 .card {
-  background: var(--paper-raised);
+  background: rgba(255, 253, 249, 0.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-radius: var(--radius-lg);
   padding: 26px;
   box-shadow: var(--shadow-soft);
@@ -877,19 +1073,103 @@ input:focus {
   line-height: 1.6;
 }
 
+/* 图纸下载按钮：放在预览区文案下面，靠左 */
+.download-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9px;
+  background: var(--ink-950);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.download-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: var(--blueprint-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(13, 95, 90, 0.25);
+}
+
+.download-btn:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+/* 带报价的按钮：亮绿色，和纯刀模图按钮区分开（亮底配深色字，对比度够） */
+.download-btn--green {
+  background: #22c55e;
+  color: #052e16;
+}
+
+.download-btn--green:hover:not(:disabled) {
+  background: #4ade80;
+  box-shadow: 0 10px 20px rgba(34, 197, 94, 0.35);
+}
+
+.download-status {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.download-status.is-error {
+  color: #c0392b;
+}
+
 @media (max-width: 980px) {
-  .hero,
   .workbench {
     grid-template-columns: 1fr;
+  }
+
+  .hero-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-text {
+    padding: 34px 28px 10px;
+  }
+
+  .hero-photo {
+    min-height: 260px;
   }
 
   .preview-stage {
     min-height: 350px;
   }
+}
 
-  .hero-art {
-    padding-top: 40px;
-    padding-bottom: 40px;
+@media (max-width: 720px) {
+  .box-row {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .box-row-pic {
+    min-height: 170px;
+    margin: 0 18px 18px;
+  }
+
+  .box-row-text {
+    padding: 26px 24px;
   }
 }
 
@@ -898,95 +1178,161 @@ input:focus {
     padding: 26px 5% 48px;
   }
 
-  header {
-    padding: 15px 5%;
+  .site-header-inner {
+    padding: 0 5%;
   }
 
   .selected-preview {
     grid-template-columns: 1fr;
   }
 }
+
+/* 系统设置了"减少动态效果"的用户：关掉所有入场动画，内容直接显示 */
+@media (prefers-reduced-motion: reduce) {
+  .hero-anim,
+  .hero-photo img,
+  .scroll-hint svg,
+  .js .box-row.is-visible,
+  .js .box-row.is-visible .box-row-pic img {
+    animation: none !important;
+  }
+
+  .js .box-row {
+    opacity: 1;
+  }
+}
 </style>
+<script>
+/* 标记 JS 可用：只有 JS 能跑时，下面的行才会先隐藏等滚动触发，
+   避免脚本失败时内容永远不显示 */
+document.documentElement.classList.add("js");
+
+/* 固定尺寸 Header：检测浏览器缩放比例，反向缩放页头。
+   原理：缩放时 window.innerWidth（CSS px）会变，outerWidth 基本不变，
+   二者之比 ≈ 缩放倍数。只在比值接近常见缩放档位时才采信，
+   （例如 DevTools 侧边停靠会让比值失真，这时不匹配任何档位，按 1 处理） */
+(function () {
+  var STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+
+  function detectZoom() {
+    if (!window.outerWidth || !window.innerWidth) return 1;
+    var z = window.outerWidth / window.innerWidth;
+    for (var i = 0; i < STEPS.length; i++) {
+      if (Math.abs(z - STEPS[i]) / STEPS[i] < 0.04) return STEPS[i];
+    }
+    return 1;
+  }
+
+  function applyHeaderScale() {
+    var scale = 1 / detectZoom();
+    document.documentElement.style.setProperty("--hdr-scale", scale.toFixed(4));
+  }
+
+  applyHeaderScale();
+  window.addEventListener("resize", applyHeaderScale);
+})();
+</script>
 </head>
 
 <body>
-<header>
-  <div class="brand-wrap">
-    <img src="assets/images/logo.png" alt="MYBOX Logo">
-    <div>
-      <div class="logo-text">MYBOX Quotation Lab</div>
-      <div class="sub">Fast structural pricing for corrugated boxes</div>
+<!-- 固定背景层（首页 / 第二页共用） -->
+<div class="bg-fixed" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand-wrap">
+      <img src="assets/images/logo.png" alt="MYBOX Logo">
+      <div>
+        <div class="logo-text">MYBOX Quotation Lab</div>
+        <div class="sub">Fast structural pricing for corrugated boxes</div>
+      </div>
     </div>
+    <div class="sub">Instant pricing engine</div>
   </div>
-  <div class="sub">Instant pricing engine</div>
 </header>
 
 <div class="page" id="page1">
   <div class="hero">
     <div class="hero-panel">
-      <div class="hero-eyebrow">Parametric packaging engine</div>
-      <h1 class="hero-title">Box Library + <span>Live Quotation</span></h1>
-      <p class="hero-copy">Select a structure, input dimensions, and get production-ready quote values in real time. The workflow is optimized for quick sales confirmation and sample estimation.</p>
-      <div class="hero-kpis">
-        <span class="kpi">MOQ 30 units</span>
-        <span class="kpi">3 Layer / 5 Layer</span>
-        <span class="kpi">Auto discount tier</span>
+      <div class="hero-text">
+        <div class="hero-eyebrow hero-anim" style="--d:0.05s">Parametric packaging engine</div>
+        <h1 class="hero-title hero-anim" style="--d:0.25s">Box Library + <span>Live Quotation</span></h1>
+        <p class="hero-copy hero-anim" style="--d:0.5s">Select a structure, input dimensions, and get production-ready quote values in real time. The workflow is optimized for quick sales confirmation and sample estimation.</p>
+        <div class="hero-kpis hero-anim" style="--d:0.75s">
+          <span class="kpi">MOQ 30 units</span>
+          <span class="kpi">3 Layer / 5 Layer</span>
+          <span class="kpi">Auto discount tier</span>
+        </div>
       </div>
-    </div>
-    <div class="hero-art">
-      <div class="hero-diagram">
-        <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- 简化的"展开图十字"示意：中心=基底，四翼=折叠侧壁，
-               呼应产品里真实展开图的实线切割/虚线折叠图例 -->
-          <rect x="80" y="80" width="60" height="60" rx="3"
-                stroke="#b9803f" stroke-width="2.4"/>
-          <rect x="80" y="10" width="60" height="60" rx="3"
-                stroke="#b9803f" stroke-width="2.4"/>
-          <rect x="80" y="150" width="60" height="60" rx="3"
-                stroke="#b9803f" stroke-width="2.4"/>
-          <rect x="10" y="80" width="60" height="60" rx="3"
-                stroke="#b9803f" stroke-width="2.4"/>
-          <rect x="150" y="80" width="60" height="60" rx="3"
-                stroke="#b9803f" stroke-width="2.4"/>
-          <line x1="80" y1="80" x2="140" y2="80" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
-          <line x1="80" y1="140" x2="140" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
-          <line x1="80" y1="80" x2="80" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
-          <line x1="140" y1="80" x2="140" y2="140" stroke="#5fd4c9" stroke-width="2" stroke-dasharray="5 4"/>
-        </svg>
-        <div class="hero-diagram-caption">Live die-line // fold preview</div>
+      <div class="hero-photo">
+        <img src="assets/images/paper_box_2.jpg" alt="Corrugated box">
       </div>
     </div>
   </div>
 
-  <div class="section-head">
+  <!-- 往下滚动提示 -->
+  <div class="scroll-hint-wrap">
+    <button type="button" class="scroll-hint" id="scrollHint" aria-label="Scroll down to box types">
+      <span>Scroll</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <div class="section-head" id="boxListHead">
     <h2 class="section-title">Select Your Box Type</h2>
     <div class="section-sub">Pick one structure to open the smart sizing and quotation workbench.</div>
     <div class="dieline-rule"></div>
   </div>
 
-  <div class="box-grid">
-    <div class="box-card" onclick="selectBox('RSC Box','assets/images/rsc.png')">
-      <img src="assets/images/rsc.png" alt="RSC Box">
-      <h3>RSC Box</h3>
-      <p>Regular slotted carton for standard logistics and storage.</p>
+  <div class="box-list" id="boxList">
+    <div class="box-row" onclick="selectBox('RSC Box','assets/images/rsc.png')">
+      <div class="box-row-text">
+        <span class="box-index">01</span>
+        <h3>RSC Box</h3>
+        <p>Regular slotted carton for standard logistics and storage.</p>
+        <span class="box-cta">Open workbench <i>&rarr;</i></span>
+      </div>
+      <div class="box-row-pic">
+        <img src="assets/images/rsc.png" alt="RSC Box">
+      </div>
     </div>
 
-    <div class="box-card" onclick="selectBox('5 Panel Box','assets/images/5panel.png')">
-      <img src="assets/images/5panel.png" alt="5 Panel Box">
-      <h3>5 Panel Box</h3>
-      <p>Extended panel structure for long products and additional protection.</p>
+    <div class="box-row" onclick="selectBox('5 Panel Box','assets/images/5panel.png')">
+      <div class="box-row-text">
+        <span class="box-index">02</span>
+        <h3>5 Panel Box</h3>
+        <p>Extended panel structure for long products and additional protection.</p>
+        <span class="box-cta">Open workbench <i>&rarr;</i></span>
+      </div>
+      <div class="box-row-pic">
+        <img src="assets/images/5panel.png" alt="5 Panel Box">
+      </div>
     </div>
 
-    <div class="box-card" onclick="selectBox('Pizza Box','assets/images/pizza.png')">
-      <img src="assets/images/pizza.png" alt="Pizza Box">
-      <h3>Pizza Box</h3>
-      <p>Flat fold style suitable for Premium or shallow product packaging format.</p>
+    <div class="box-row" onclick="selectBox('Pizza Box','assets/images/pizza.png')">
+      <div class="box-row-text">
+        <span class="box-index">03</span>
+        <h3>Pizza Box</h3>
+        <p>Flat fold style suitable for Premium or shallow product packaging format.</p>
+        <span class="box-cta">Open workbench <i>&rarr;</i></span>
+      </div>
+      <div class="box-row-pic">
+        <img src="assets/images/pizza.png" alt="Pizza Box">
+      </div>
     </div>
 
-    <div class="box-card" onclick="selectBox('Gift Box','assets/images/gift.png')">
-      <img src="assets/images/gift.png" alt="Gift Box">
-      <h3>Gift Box</h3>
-      <p>Presentation-oriented structure for premium display and gifting.</p>
+    <div class="box-row" onclick="selectBox('Gift Box','assets/images/gift.png')">
+      <div class="box-row-text">
+        <span class="box-index">04</span>
+        <h3>Gift Box</h3>
+        <p>Presentation-oriented structure for premium display and gifting.</p>
+        <span class="box-cta">Open workbench <i>&rarr;</i></span>
+      </div>
+      <div class="box-row-pic">
+        <img src="assets/images/gift.png" alt="Gift Box">
+      </div>
     </div>
   </div>
 </div>
@@ -1071,6 +1417,26 @@ input:focus {
         </div>
         
         <p class="note" id="previewNote">Pizza Box + RSC Box 2D preview uses your provided architecture and redraws lines in real time from your inputs.</p>
+
+        <div class="download-row">
+          <button type="button" class="download-btn" id="downloadPdfBtn" title="Download the die line as a PDF (1:1 size, without dimension marks)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <polyline points="7 11 12 16 17 11"></polyline>
+              <path d="M4 20h16"></path>
+            </svg>
+            <span>Download Die-line PDF</span>
+          </button>
+          <button type="button" class="download-btn download-btn--green" id="downloadQuotePdfBtn" title="Download the die line with the current quotation added at the bottom-left (select layer, material and quantity first)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <polyline points="7 11 12 16 17 11"></polyline>
+              <path d="M4 20h16"></path>
+            </svg>
+            <span>Download Die-line + Quotation PDF</span>
+          </button>
+          <span class="download-status" id="downloadPdfStatus" role="status" aria-live="polite"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -1103,6 +1469,48 @@ input:focus {
 <script src="scripts/3d/gift-3d-preview.js"></script>
 
 <script src="scripts/app.js"></script>
+
+<!-- 图纸 PDF 导出：jsPDF + svg2pdf.js（矢量转 PDF），再加导出逻辑 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/dist/svg2pdf.umd.min.js"></script>
+<script src="scripts/pdf-export.js"></script>
+
+<script>
+/* 首页交互：
+   1) 每个箱型行单独监听，各自滚进视口时才加 is-visible 触发入场动画
+      （每行 observe 一次，触发后就 unobserve，不会重复播放）
+   2) 往下滚动提示：点击平滑滚到箱型列表；页面一滚动就淡出 */
+(function () {
+  var rows = document.querySelectorAll(".box-row");
+
+  if (!("IntersectionObserver" in window)) {
+    rows.forEach(function (row) { row.classList.add("is-visible"); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.18, rootMargin: "0px 0px -6% 0px" });
+
+    rows.forEach(function (row) { io.observe(row); });
+  }
+
+  var hint = document.getElementById("scrollHint");
+  if (hint) {
+    hint.addEventListener("click", function () {
+      var target = document.getElementById("boxListHead");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    window.addEventListener("scroll", function () {
+      hint.classList.toggle("is-away", window.scrollY > 60);
+    }, { passive: true });
+  }
+})();
+</script>
 
 </body>
 </html>
