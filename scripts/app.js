@@ -1887,11 +1887,7 @@ function initPreviewPanZoom(stage) {
   const state = getPreviewSvgState(svg);
   applyPreviewViewBox(svg, state.baseViewBox);
 
-  let dragging = false;
-  let dragStartClientX = 0;
-  let dragStartClientY = 0;
-  let dragStartViewBox = null;
-
+  // ── 鼠标滚轮缩放（电脑端，逻辑保持不变）──────────────────────
   const onWheel = (e) => {
     e.preventDefault();
 
@@ -1923,55 +1919,184 @@ function initPreviewPanZoom(stage) {
     });
   };
 
-  const onMouseDown = (e) => {
-    if (e.button !== 0) {
+  // ── 指针事件：鼠标拖动 / 手机单指拖动 / 手机双指捏合缩放 ────────
+  // 用 Pointer Events 统一处理鼠标和触屏（之前只有 mouse 事件，
+  // 手机上完全没反应）。pointers 记录当前按在画面上的所有手指/鼠标：
+  //   1 个 → 平移；2 个 → 捏合缩放（同时跟随双指中点平移）
+  const pointers = new Map();
+  let gesture = null;
+  let lastTap = { time: 0, x: 0, y: 0 };
+
+  // 手势换算用 svg 自身的显示区域（比外层 canvas 更贴合图形本身）
+  const getRect = () => {
+    const r = svg.getBoundingClientRect();
+    return (r.width && r.height) ? r : canvas.getBoundingClientRect();
+  };
+
+  // 每次手指数量变化（按下 / 松开一根）都重新记一次"起点"，
+  // 这样松开其中一根手指后，剩下的手指继续平移，画面不会跳
+  const beginGesture = () => {
+    const pts = Array.from(pointers.values());
+
+    if (pts.length === 1) {
+      gesture = {
+        type: 'pan',
+        x: pts[0].x,
+        y: pts[0].y,
+        vb: { ...state.currentViewBox }
+      };
+    } else if (pts.length >= 2) {
+      const a = pts[0];
+      const b = pts[1];
+      gesture = {
+        type: 'pinch',
+        dist: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+        midX: (a.x + b.x) / 2,
+        midY: (a.y + b.y) / 2,
+        vb: { ...state.currentViewBox }
+      };
+    } else {
+      gesture = null;
+    }
+
+    canvas.classList.toggle('is-dragging', !!gesture);
+  };
+
+  const onPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) {
       return;
     }
 
     e.preventDefault();
-    dragging = true;
-    canvas.classList.add('is-dragging');
 
-    dragStartClientX = e.clientX;
-    dragStartClientY = e.clientY;
-    dragStartViewBox = { ...state.currentViewBox };
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (err) {
+      // 个别浏览器不支持捕获指针，忽略即可
+    }
+
+    pointers.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: performance.now(),
+      moved: false
+    });
+
+    beginGesture();
   };
 
-  const onMouseMove = (e) => {
-    if (!dragging || !dragStartViewBox) {
+  const onPointerMove = (e) => {
+    const p = pointers.get(e.pointerId);
+    if (!p) {
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
+    p.x = e.clientX;
+    p.y = e.clientY;
+
+    if (Math.hypot(p.x - p.startX, p.y - p.startY) > 10) {
+      p.moved = true;
+    }
+
+    if (!gesture) {
+      return;
+    }
+
+    const rect = getRect();
     if (!rect.width || !rect.height) {
       return;
     }
 
-    const dxPx = e.clientX - dragStartClientX;
-    const dyPx = e.clientY - dragStartClientY;
+    if (gesture.type === 'pan' && pointers.size === 1) {
+      const dxSvg = ((p.x - gesture.x) / rect.width) * gesture.vb.width;
+      const dySvg = ((p.y - gesture.y) / rect.height) * gesture.vb.height;
 
-    const dxSvg = (dxPx / rect.width) * dragStartViewBox.width;
-    const dySvg = (dyPx / rect.height) * dragStartViewBox.height;
+      applyPreviewViewBox(svg, {
+        x: gesture.vb.x - dxSvg,
+        y: gesture.vb.y - dySvg,
+        width: gesture.vb.width,
+        height: gesture.vb.height
+      });
+      return;
+    }
 
-    applyPreviewViewBox(svg, {
-      x: dragStartViewBox.x - dxSvg,
-      y: dragStartViewBox.y - dySvg,
-      width: dragStartViewBox.width,
-      height: dragStartViewBox.height
-    });
+    if (gesture.type === 'pinch' && pointers.size >= 2) {
+      const pts = Array.from(pointers.values());
+      const a = pts[0];
+      const b = pts[1];
+
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+
+      // 手指张开 → 距离变大 → k < 1 → 可视范围变小 = 放大
+      const k = gesture.dist / dist;
+      const vb = gesture.vb;
+      const nextWidth = vb.width * k;
+      const nextHeight = vb.height * k;
+
+      // 保证"起点双指中点正下方的那个图形位置"，始终跟着当前双指中点走：
+      // 这样既是以手指为中心缩放，也支持双指一起拖动平移
+      const px0 = (gesture.midX - rect.left) / rect.width;
+      const py0 = (gesture.midY - rect.top) / rect.height;
+      const anchorX = vb.x + (vb.width * px0);
+      const anchorY = vb.y + (vb.height * py0);
+
+      const px1 = (midX - rect.left) / rect.width;
+      const py1 = (midY - rect.top) / rect.height;
+
+      applyPreviewViewBox(svg, {
+        x: anchorX - (nextWidth * px1),
+        y: anchorY - (nextHeight * py1),
+        width: nextWidth,
+        height: nextHeight
+      });
+    }
   };
 
-  const stopDragging = () => {
-    dragging = false;
-    dragStartViewBox = null;
-    canvas.classList.remove('is-dragging');
+  const resetView = () => {
+    applyPreviewViewBox(svg, state.baseViewBox);
+  };
+
+  const onPointerEnd = (e) => {
+    const p = pointers.get(e.pointerId);
+    pointers.delete(e.pointerId);
+
+    try {
+      canvas.releasePointerCapture(e.pointerId);
+    } catch (err) {
+      // 已经释放过了，忽略
+    }
+
+    // 手机上"快速点两下"恢复到初始视图（鼠标用下面的 dblclick）
+    if (
+      p &&
+      e.type === 'pointerup' &&
+      e.pointerType !== 'mouse' &&
+      !p.moved &&
+      pointers.size === 0 &&
+      (performance.now() - p.startTime) < 300
+    ) {
+      const now = performance.now();
+      if (now - lastTap.time < 350 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 30) {
+        resetView();
+        lastTap = { time: 0, x: 0, y: 0 };
+      } else {
+        lastTap = { time: now, x: p.x, y: p.y };
+      }
+    }
+
+    beginGesture();
   };
 
   canvas.addEventListener('wheel', onWheel, { passive: false });
-  canvas.addEventListener('mousedown', onMouseDown);
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', stopDragging);
-  canvas.addEventListener('mouseleave', stopDragging);
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerEnd);
+  canvas.addEventListener('pointercancel', onPointerEnd);
+  canvas.addEventListener('dblclick', resetView);
 }
 
 async function render2DPreview() {
