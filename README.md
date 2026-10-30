@@ -2,19 +2,26 @@
 
 A corrugated-box quotation tool that turns a few dimensions into a **parametric 2D die line**, a **3D folding preview**, a **price estimate** and a **downloadable PDF drawing** — all in the browser, with no build step and no backend.
 
-> Live demo: `https://<your-username>.github.io/<repo-name>/`
+> Live demo: `https://ongwrk812-a11y.github.io/box-quotation/`
 
-<!-- 建议在这里放 2~3 张截图（首页、2D 展开图、3D 折叠、导出的 PDF），README 的观感会好很多：
-![Home](docs/home.png) -->
+## Screenshots
 
-## Features
+**Home**
 
-- **Four box types** — RSC Box, 5 Panel Box, Pizza Box and Gift Box, each with its own structure and size limits.
-- **Live 2D die line** — the flat layout is redrawn in real time from the Length / Width / Height you type, with dimension marks, pan and zoom.
-- **3D folding preview** — every box type has a step-by-step folding animation (play / pause, scrub with a slider, rotate, zoom, pan) built on Three.js.
-- **Instant quotation** — pick layer count and material, enter a quantity, and get unit price, total price, quantity-discount tier and a logistics estimate (parcel size, weight, number of parcels, delivery fee).
-- **PDF drawing export** — download the die line as a vector PDF at **1:1 real size**, with the dimension marks removed. A second button adds the current quotation to the bottom-left of the drawing. Files are named like `5_panel_100mm_100mm_100mm.pdf`.
-- **Polished UI** — blueprint-and-kraft-paper visual style, fixed background, scroll-triggered entrance animations, responsive layout.
+![Home page](show_pic/show_pic_1.png)
+![Box library](show_pic/show_pic_2.png)
+
+**2D die line**
+
+![2D die line](show_pic/show_pic_3.png)
+
+**3D folding preview**
+
+![3D folding preview](show_pic/show_pic_4.png)
+
+**Exported PDF drawing**
+
+![Exported PDF](show_pic/show_pic_5.png)
 
 ## Tech stack
 
@@ -46,22 +53,27 @@ python -m http.server 5173
 # then open http://127.0.0.1:5173
 ```
 
-(On Windows you can also double-click `start-server.bat` if it is included.)
-
 ## Project structure
 
 ```
-index.html              # Home page + workbench page (layout and styles)
-assets/images/          # Box photos, logo, background images
+index.html                  # Home page + workbench page (layout and styles)
+README.md
+show_pic/                   # Screenshots used in this README
+assets/
+  images/                   # Box photos, logo, background images
 scripts/
-  app.js                # State, input handling, pricing, 2D die-line generation
-  pdf-export.js         # PDF drawing / quotation export
-  models/               # Die-line templates (Pizza, Gift, 5 Panel)
+  app.js                    # State, input handling, pricing, 2D die-line generation
+  pdf-export.js             # PDF drawing / quotation export
+  models/                   # Die-line template data
+    pizza-template-b-model.js
+    gift-box-template.js
+    five-panel-template.js
   3d/
-    3d-scene.js         # Shared Three.js scene, camera and controls
-    *-3d-model.js       # Per-box panel geometry and pivot hierarchy
-    *-3d-player.js      # Per-box folding timeline
-    *-3d-preview.js     # Per-box mounting and camera setup
+    3d-scene.js             # Shared Three.js scene, camera and controls
+    *-3d-model.js           # Per-box panel geometry and pivot hierarchy
+    *-3d-player.js          # Per-box folding timeline
+    *-3d-preview.js         # Per-box mounting and camera setup
+                            # (one set each for rsc, five-panel, pizza, gift)
 ```
 
 ## Notes
